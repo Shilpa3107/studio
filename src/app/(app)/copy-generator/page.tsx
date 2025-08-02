@@ -37,10 +37,10 @@ import { Separator } from '@/components/ui/separator';
 const formSchema = z.object({
   productDescription: z
     .string()
-    .min(10, { message: 'Please provide a more detailed product description.' }),
+ .min(10, { message: 'Please provide a more detailed product description.' }),
   targetAudience: z
     .string()
-min(10, { message: 'Please describe the target audience in more detail.' }),
+ .min(10, { message: 'Please describe the target audience in more detail.' }),
   campaignGoals: z
     .string()
     .min(10, { message: 'Please specify the campaign goals.' }),
