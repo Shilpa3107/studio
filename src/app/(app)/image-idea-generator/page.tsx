@@ -5,9 +5,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
-  nothingAgent,
-  type NothingAgentOutput,
-} from '@/ai/flows/nothing-agent';
+  imageIdeaGenerator,
+  type ImageIdeaGeneratorOutput,
+} from '@/ai/flows/image-idea-generator';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -17,33 +17,35 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { PageHeader } from '@/components/PageHeader';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Bot, Sparkles } from 'lucide-react';
+import { AlertCircle, Camera, Sparkles } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const formSchema = z.object({
-  prompt: z.string().min(2, {
-    message: 'Prompt must be at least 2 characters.',
-  }),
+  campaignConcept: z
+    .string()
+    .min(10, { message: 'Please describe your campaign concept in more detail.' }),
 });
 
-export default function NothingAgentPage() {
-  const [result, setResult] = useState<NothingAgentOutput | null>(null);
+export default function ImageIdeaGeneratorPage() {
+  const [result, setResult] = useState<ImageIdeaGeneratorOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      prompt: '',
+      campaignConcept: '',
     },
   });
 
@@ -53,7 +55,7 @@ export default function NothingAgentPage() {
     setResult(null);
 
     try {
-      const response = await nothingAgent(values);
+      const response = await imageIdeaGenerator(values);
       setResult(response);
     } catch (e) {
       setError('An error occurred. Please try again.');
@@ -66,15 +68,18 @@ export default function NothingAgentPage() {
   return (
     <div className="flex flex-1 flex-col">
       <PageHeader
-        title="Nothing Agent"
-        description="An agent that does nothing, perfectly."
+        title="Image Idea Generator"
+        description="Generate stunning visual concepts for your ad campaigns."
       />
       <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div className="md:col-span-1">
             <Card>
               <CardHeader>
-                <CardTitle>Prompt</CardTitle>
+                <CardTitle>Campaign Concept</CardTitle>
+                <CardDescription>
+                  Describe your campaign to get started.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Form {...form}>
@@ -84,12 +89,16 @@ export default function NothingAgentPage() {
                   >
                     <FormField
                       control={form.control}
-                      name="prompt"
+                      name="campaignConcept"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Your Prompt</FormLabel>
+                          <FormLabel>Campaign Description</FormLabel>
                           <FormControl>
-                            <Input placeholder="Tell the agent to do something..." {...field} />
+                            <Textarea
+                              placeholder="e.g., A campaign for a new eco-friendly sneaker made from recycled materials, targeting young, urban consumers."
+                              rows={6}
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -97,10 +106,10 @@ export default function NothingAgentPage() {
                     />
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? (
-                          'Doing nothing...'
+                          'Generating...'
                       ) : (
                         <>
-                            <Sparkles className="mr-2" /> Do Nothing
+                            <Sparkles className="mr-2" /> Generate Ideas
                         </>
                       )}
                     </Button>
@@ -110,15 +119,27 @@ export default function NothingAgentPage() {
             </Card>
           </div>
           <div className="md:col-span-2">
-            <Card className="min-h-[250px]">
+            <Card className="min-h-[500px]">
               <CardHeader>
-                <CardTitle>Result</CardTitle>
+                <CardTitle>Visual Concepts</CardTitle>
+                <CardDescription>
+                    Your generated image ideas will appear here.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoading && (
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <Card key={i}>
+                        <CardHeader>
+                            <Skeleton className="h-5 w-1/3" />
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                           <Skeleton className="h-4 w-full" />
+                           <Skeleton className="h-4 w-4/5" />
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
                 )}
                 {error && (
@@ -131,15 +152,27 @@ export default function NothingAgentPage() {
                 {!isLoading && !result && !error && (
                     <div className="flex flex-col items-center justify-center text-center p-8 h-full">
                         <div className="p-4 bg-secondary rounded-full">
-                           <Bot className="w-10 h-10 text-muted-foreground" />
+                           <Camera className="w-10 h-10 text-muted-foreground" />
                         </div>
-                        <p className="mt-4 text-lg font-medium">The result of nothing will appear here.</p>
-                        <p className="text-muted-foreground">Enter a prompt and see what happens.</p>
+                        <p className="mt-4 text-lg font-medium">Ready for some visual inspiration?</p>
+                        <p className="text-muted-foreground">Describe your campaign concept to see the ideas.</p>
                     </div>
                 )}
                 {result && (
                   <div className="space-y-4 animate-in fade-in-50 duration-500">
-                    <p>{result.message}</p>
+                    {result.imageIdeas.map((idea, index) => (
+                      <Card key={index} className="shadow-md">
+                        <CardHeader>
+                            <CardTitle className='flex justify-between items-start'>
+                                {idea.title}
+                                <Badge variant="outline">{idea.artStyle}</Badge>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-muted-foreground">{idea.description}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
                 )}
               </CardContent>
