@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bot, Lightbulb, Type } from 'lucide-react';
+import { Bot, Lightbulb, Type, ShieldOff } from 'lucide-react';
 
 import {
   SidebarHeader,
@@ -26,6 +26,11 @@ const menuItems = [
     href: '/copy-generator',
     icon: Type,
     label: 'Copy Generator',
+  },
+  {
+    href: '/nothing-agent',
+    icon: ShieldOff,
+    label: 'Nothing Agent',
   },
 ];
 
