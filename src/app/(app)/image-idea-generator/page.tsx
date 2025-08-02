@@ -8,6 +8,7 @@ import {
   imageIdeaGenerator,
   type ImageIdeaGeneratorOutput,
 } from '@/ai/flows/image-idea-generator';
+import { generateImage } from '@/ai/flows/image-generator';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -23,13 +24,15 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Camera, Sparkles } from 'lucide-react';
+import { AlertCircle, Camera, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
 
 const formSchema = z.object({
   campaignConcept: z
@@ -37,10 +40,18 @@ const formSchema = z.object({
     .min(10, { message: 'Please describe your campaign concept in more detail.' }),
 });
 
+type GeneratedImage = {
+  index: number;
+  url: string;
+  isLoading: boolean;
+  error?: string;
+};
+
 export default function ImageIdeaGeneratorPage() {
   const [result, setResult] = useState<ImageIdeaGeneratorOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generatedImages, setGeneratedImages] = useState<Record<number, GeneratedImage>>({});
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -53,6 +64,7 @@ export default function ImageIdeaGeneratorPage() {
     setIsLoading(true);
     setError(null);
     setResult(null);
+    setGeneratedImages({});
 
     try {
       const response = await imageIdeaGenerator(values);
@@ -62,6 +74,18 @@ export default function ImageIdeaGeneratorPage() {
       console.error(e);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  const handleGenerateImage = async (idea: ImageIdeaGeneratorOutput['imageIdeas'][0], index: number) => {
+    setGeneratedImages(prev => ({...prev, [index]: { index, url: '', isLoading: true }}));
+    try {
+      const prompt = `${idea.title}: ${idea.description}. Art style: ${idea.artStyle}.`;
+      const response = await generateImage({ prompt });
+      setGeneratedImages(prev => ({...prev, [index]: { ...prev[index], url: response.imageUrl, isLoading: false }}));
+    } catch (e) {
+       setGeneratedImages(prev => ({...prev, [index]: { ...prev[index], isLoading: false, error: "Image generation failed." }}));
+       console.error(e);
     }
   }
 
@@ -170,7 +194,19 @@ export default function ImageIdeaGeneratorPage() {
                         </CardHeader>
                         <CardContent>
                           <p className="text-muted-foreground">{idea.description}</p>
+                           {generatedImages[index]?.isLoading && <div className="mt-4 flex items-center justify-center"><Skeleton className="h-64 w-full" /></div>}
+                           {generatedImages[index]?.error && <Alert variant="destructive" className="mt-4"><AlertCircle className="h-4 w-4" /><AlertTitle>Error</AlertTitle><AlertDescription>{generatedImages[index].error}</AlertDescription></Alert>}
+                           {generatedImages[index]?.url && <div className="mt-4 rounded-lg overflow-hidden border"><Image src={generatedImages[index].url} alt={idea.title} width={512} height={512} className="w-full h-auto" /></div>}
                         </CardContent>
+                        <CardFooter>
+                          <Button 
+                            onClick={() => handleGenerateImage(idea, index)} 
+                            disabled={generatedImages[index]?.isLoading}
+                            className="w-full"
+                          >
+                            {generatedImages[index]?.isLoading ? 'Generating Image...' : <><ImageIcon className="mr-2" />Generate Image</>}
+                          </Button>
+                        </CardFooter>
                       </Card>
                     ))}
                   </div>
